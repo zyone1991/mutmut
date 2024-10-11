@@ -105,7 +105,10 @@ def version():
 
 
 @click.argument('argument', nargs=1, required=False)
-@click.option('--focal-file', type=click.STRING, default = None)
+@click.option('--focal-file', type=click.STRING, default = None, help = "relative path to the focal file in the repo")
+@click.option('--focal-start-line', type=click.STRING, default = None, help = "the start line of the focal method, 1 indexed")
+@click.option('--focal-end-line', type=click.STRING, default = None, help = "the end line of the focal method, 1 indexed and exclusive")
+
 @click.option('--paths-to-mutate', type=click.STRING)
 @click.option('--disable-mutation-types', type=click.STRING, help='Skip the given types of mutations.')
 @click.option('--enable-mutation-types', type=click.STRING, help='Only perform given types of mutations.')
@@ -135,7 +138,7 @@ def version():
     post_mutation=None,
     use_patch_file=None,
 )
-def run(argument, focal_file, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
+def run(argument, focal_file, focal_start_line, focal_end_line, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
         tests_dir, test_time_multiplier, test_time_base, swallow_output, use_coverage,
         dict_synonyms, pre_mutation, post_mutation, use_patch_file, paths_to_exclude,
         simple_output, no_progress, ci, rerun_all):
@@ -165,12 +168,14 @@ def run(argument, focal_file, paths_to_mutate, disable_mutation_types, enable_mu
     With --CI flag enabled, the exit code will always be
     1 for a fatal error or 0 for any other case.
     """
+    if focal_start_line is not None and focal_end_line is not None:
+        focal_start_line, focal_end_line = int(focal_start_line), int(focal_end_line)
     if test_time_base is None:  # click sets the default=0.0 to None
         test_time_base = 0.0
     if test_time_multiplier is None:  # click sets the default=0.0 to None
         test_time_multiplier = 0.0
 
-    sys.exit(do_run(argument, focal_file, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
+    sys.exit(do_run(argument, focal_file, focal_start_line, focal_end_line, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
                     tests_dir, test_time_multiplier, test_time_base, swallow_output, use_coverage,
                     dict_synonyms, pre_mutation, post_mutation, use_patch_file, paths_to_exclude,
                     simple_output, no_progress, ci, rerun_all))
@@ -273,6 +278,8 @@ def html(dict_synonyms, directory):
 def do_run(
     argument,
     focal_file,
+    focal_start_line, 
+    focal_end_line,
     paths_to_mutate,
     disable_mutation_types,
     enable_mutation_types,
@@ -432,6 +439,8 @@ Legend for output:
     config = Config(
         total=0,  # we'll fill this in later!
         focal_file = focal_file,
+        focal_start_line = focal_start_line, 
+        focal_end_line = focal_end_line,
         swallow_output=not swallow_output,
         test_command=runner,
         covered_lines_by_filename=covered_lines_by_filename,
@@ -452,11 +461,12 @@ Legend for output:
         rerun_all=rerun_all
     )
 
+
     parse_run_argument(argument, config, dict_synonyms, mutations_by_file, paths_to_exclude, paths_to_mutate, tests_dirs)
 
     config.total = sum(len(mutations) for mutations in mutations_by_file.values())
 
-    print()
+    print(f"Mutations_by_file: {len(mutations_by_file)}, total mutations: {config.total}")
     print('2. Checking mutants')
     progress = Progress(total=config.total, output_legend=output_legend, no_progress=no_progress)
 
@@ -475,17 +485,20 @@ Legend for output:
 
 def parse_run_argument(argument, config, dict_synonyms, mutations_by_file, paths_to_exclude, paths_to_mutate, tests_dirs):
     if argument is None:
-        print("none args") 
+
         for path in paths_to_mutate:
             for filename in python_source_files(path, tests_dirs, paths_to_exclude):
-                if not config.focal_file in filename:
+
+                if config.focal_file is not None and config.focal_file != str(filename):
                     continue 
+
                 if filename.startswith('test_') or filename.endswith('__tests.py'):
                     continue
+
                 update_line_numbers(filename)
                 add_mutations_by_file(mutations_by_file, filename, dict_synonyms, config)
     else:
-        print("guaguagua")
+
         try:
             int(argument)
         except ValueError:

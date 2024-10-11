@@ -826,6 +826,8 @@ def run_mutation(context: Context, callback) -> str:
 class Config:
     swallow_output: bool
     focal_file: str
+    focal_start_line:int
+    focal_end_line:int
     test_command: str
     _default_test_command: str = field(init=False)
     covered_lines_by_filename: Optional[Dict[str, set[Optional[int]]]]
@@ -1232,8 +1234,14 @@ def add_mutations_by_file(
     dict_synonyms: List[str],
     config: Optional[Config],
 ):
+    # # apply the line of mutated code here 
+
+    if config.focal_file is not None and filename != str(config.focal_file):
+        return 
+    
     with open(filename) as f:
         source = f.read()
+
     context = Context(
         source=source,
         filename=filename,
@@ -1242,7 +1250,11 @@ def add_mutations_by_file(
     )
 
     try:
-        mutations_by_file[filename] = list_mutations(context)
+        mutations = list_mutations(context)
+        if config.focal_file is not None and config.focal_start_line is not None and config.focal_end_line is not None:
+            mutations = [mutation_ids for mutation_ids in mutations if config.focal_start_line <= mutation_ids.line_number < config.focal_end_line]
+            
+        mutations_by_file[filename] = mutations
         from mutmut.cache import register_mutants
 
         register_mutants(mutations_by_file)

@@ -407,6 +407,7 @@ def update_line_numbers(filename):
 @init_db
 @db_session
 def register_mutants(mutations_by_file):
+
     for filename, mutation_ids in mutations_by_file.items():
         hash = hash_of(filename)
         sourcefile = get_or_create(SourceFile, filename=filename)
@@ -420,7 +421,6 @@ def register_mutants(mutations_by_file):
             get_or_create(Mutant, line=line, index=mutation_id.index, defaults=dict(status=UNTESTED))
 
         sourcefile.hash = hash
-
 
 @init_db
 @db_session
