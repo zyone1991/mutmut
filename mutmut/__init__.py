@@ -825,6 +825,7 @@ def run_mutation(context: Context, callback) -> str:
 @dataclass
 class Config:
     swallow_output: bool
+    focal_file: str
     test_command: str
     _default_test_command: str = field(init=False)
     covered_lines_by_filename: Optional[Dict[str, set[Optional[int]]]]
