@@ -467,7 +467,12 @@ Legend for output:
     config.total = sum(len(mutations) for mutations in mutations_by_file.values())
 
     print(f"Mutations_by_file: {len(mutations_by_file)}, total mutations: {config.total}")
+
     print('2. Checking mutants')
+    if config.total == 0: 
+      print("No mutants. Return")
+      return 0
+    
     progress = Progress(total=config.total, output_legend=output_legend, no_progress=no_progress)
 
     try:
