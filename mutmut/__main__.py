@@ -109,6 +109,7 @@ def version():
 @click.option('--focal-start-line', type=click.STRING, default = None, help = "the start line of the focal method, 1 indexed")
 @click.option('--focal-end-line', type=click.STRING, default = None, help = "the end line of the focal method, 1 indexed and exclusive")
 
+@click.option('--test-files', type=click.STRING, default = None, help = "test files, separated by colon")
 @click.option('--paths-to-mutate', type=click.STRING)
 @click.option('--disable-mutation-types', type=click.STRING, help='Skip the given types of mutations.')
 @click.option('--enable-mutation-types', type=click.STRING, help='Only perform given types of mutations.')
@@ -138,7 +139,7 @@ def version():
     post_mutation=None,
     use_patch_file=None,
 )
-def run(argument, focal_file, focal_start_line, focal_end_line, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
+def run(argument, focal_file, focal_start_line, focal_end_line, test_files, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
         tests_dir, test_time_multiplier, test_time_base, swallow_output, use_coverage,
         dict_synonyms, pre_mutation, post_mutation, use_patch_file, paths_to_exclude,
         simple_output, no_progress, ci, rerun_all):
@@ -175,7 +176,7 @@ def run(argument, focal_file, focal_start_line, focal_end_line, paths_to_mutate,
     if test_time_multiplier is None:  # click sets the default=0.0 to None
         test_time_multiplier = 0.0
 
-    sys.exit(do_run(argument, focal_file, focal_start_line, focal_end_line, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
+    sys.exit(do_run(argument, focal_file, focal_start_line, focal_end_line,test_files, paths_to_mutate, disable_mutation_types, enable_mutation_types, runner,
                     tests_dir, test_time_multiplier, test_time_base, swallow_output, use_coverage,
                     dict_synonyms, pre_mutation, post_mutation, use_patch_file, paths_to_exclude,
                     simple_output, no_progress, ci, rerun_all))
@@ -280,6 +281,7 @@ def do_run(
     focal_file,
     focal_start_line, 
     focal_end_line,
+    test_files,
     paths_to_mutate,
     disable_mutation_types,
     enable_mutation_types,
@@ -400,6 +402,9 @@ Legend for output:
             import pytest  # noqa
         except ImportError:
             runner = 'python -m unittest'
+    
+    if test_files is not None and len(test_files):
+        runner += " " + " ".join(test_files.split(","))
 
     if hasattr(mutmut_config, 'init'):
         mutmut_config.init()
@@ -465,6 +470,11 @@ Legend for output:
     parse_run_argument(argument, config, dict_synonyms, mutations_by_file, paths_to_exclude, paths_to_mutate, tests_dirs)
 
     config.total = sum(len(mutations) for mutations in mutations_by_file.values())
+
+    if test_files is not None:
+        print(f"Only run Test files: {test_files}\n")
+        
+    print(f"Test command: {runner}")
 
     print(f"Mutations_by_file: {len(mutations_by_file)}, total mutations: {config.total}")
 
