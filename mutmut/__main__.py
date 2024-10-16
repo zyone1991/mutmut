@@ -504,12 +504,14 @@ def parse_run_argument(argument, config, dict_synonyms, mutations_by_file, paths
         for path in paths_to_mutate:
             for filename in python_source_files(path, tests_dirs, paths_to_exclude):
 
-                if config.focal_file is not None and config.focal_file != str(filename):
-                    continue 
+                if config.focal_file is not None:
+                    # if config.focal_file != str(filename):
+                    if Path(config.focal_file) != Path(filename):
+                        continue 
 
                 if filename.startswith('test_') or filename.endswith('__tests.py'):
                     continue
-
+                
                 update_line_numbers(filename)
                 add_mutations_by_file(mutations_by_file, filename, dict_synonyms, config)
     else:

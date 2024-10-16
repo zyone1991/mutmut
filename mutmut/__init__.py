@@ -29,6 +29,7 @@ from threading import (
 )
 from time import time
 from typing import Callable, Dict, Iterator, List, Optional, Set, Tuple
+from pathlib import Path
 
 from parso import parse
 from parso.python.tree import Name, Number, Keyword, FStringStart, FStringEnd
@@ -1236,7 +1237,7 @@ def add_mutations_by_file(
 ):
     # # apply the line of mutated code here 
 
-    if config.focal_file is not None and filename != str(config.focal_file):
+    if config.focal_file is not None and Path(filename) != Path(config.focal_file):
         return 
     
     with open(filename) as f:
